@@ -1,0 +1,89 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ---------------------------
+# Generate Synthetic Dataset
+# ---------------------------
+np.random.seed(42)
+
+cluster_1 = np.random.randn(100, 2) + np.array([2, 2])
+cluster_2 = np.random.randn(100, 2) + np.array([-2, -2])
+cluster_3 = np.random.randn(100, 2) + np.array([5, -5])
+
+X = np.vstack((cluster_1, cluster_2, cluster_3))
+
+
+# ---------------------------
+# Distance Function
+# ---------------------------
+def euclidean_distance(a, b):
+    return np.sqrt(np.sum((a - b) ** 2))
+
+
+# ---------------------------
+# K-Means from Scratch
+# ---------------------------
+def kmeans(X, K, max_iters=100):
+    centroids = X[np.random.choice(len(X), K, replace=False)]
+
+    for _ in range(max_iters):
+        clusters = [[] for _ in range(K)]
+
+        # Assignment step
+        for point in X:
+            distances = [euclidean_distance(point, centroid) for centroid in centroids]
+            cluster_index = np.argmin(distances)
+            clusters[cluster_index].append(point)
+
+        # Update step
+        new_centroids = np.array([np.mean(cluster, axis=0) for cluster in clusters])
+
+        # Convergence check
+        if np.allclose(centroids, new_centroids):
+            break
+
+        centroids = new_centroids
+
+    return centroids, clusters
+
+
+# ---------------------------
+# Elbow Method (WCSS)
+# ---------------------------
+def calculate_wcss(X, K):
+    centroids, clusters = kmeans(X, K)
+    wcss = 0
+    for i in range(K):
+        for point in clusters[i]:
+            wcss += euclidean_distance(point, centroids[i]) ** 2
+    return wcss
+
+
+wcss_values = []
+K_range = range(2, 11)
+
+for K in K_range:
+    wcss_values.append(calculate_wcss(X, K))
+
+plt.plot(K_range, wcss_values, marker='o')
+plt.xlabel("Number of Clusters (K)")
+plt.ylabel("WCSS")
+plt.title("Elbow Method")
+plt.show()
+
+
+# ---------------------------
+# Final Clustering with K=3
+# ---------------------------
+optimal_K = 3
+centroids, clusters = kmeans(X, optimal_K)
+
+colors = ['red', 'blue', 'green']
+
+for i, cluster in enumerate(clusters):
+    cluster = np.array(cluster)
+    plt.scatter(cluster[:, 0], cluster[:, 1], color=colors[i])
+
+plt.scatter(centroids[:, 0], centroids[:, 1], color='black', marker='X', s=200)
+plt.title("Final K-Means Clustering Result")
+plt.show()
